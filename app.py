@@ -70,7 +70,7 @@ def get_gemini_hint(problem_text, chat_history, level):
     - Keep responses short.
     """
     
-    model = genai.GenerativeModel(model_name="gemini-1.5-flash", system_instruction=system_instruction)
+model = genai.GenerativeModel(model_name="gemini-1.5-flash-latest", system_instruction=system_instruction)
     
     history_for_gemini = []
     for msg in chat_history:
