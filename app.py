@@ -78,7 +78,7 @@ def get_gemini_hint(problem_text, chat_history, level):
     """
     
     # Updated to the model we found in your debug panel
-    target_model_name = "gemini-2.0-flash-lite-001"
+    target_model_name = "gemini-2.5-flash-lite"
     
     try:
         model = genai.GenerativeModel(
