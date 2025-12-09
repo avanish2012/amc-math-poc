@@ -17,7 +17,7 @@ with st.sidebar:
         api_key = st.text_input("Gemini API Key", type="password")
 
     # Problem Sheet URL
-    default_sheet = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRk-iI5pGXbX-u7vnoxOQWj1_5oaCg3-wbN1DK7VwWjB4tPGFfOQc7B1XgLhXk1A/pub?output=csv" 
+    default_sheet = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQMfKhGbygEfKIRB45IZrR-sObCD1YHtvxtbyNFTShTgp60E-VednIdO9g7Anx_D1v406Dd9TK2S5lq/pub?gid=0&single=true&output=csv" 
     sheet_url = st.text_input("Problem Bank (CSV URL)", value=default_sheet)
     
     # Reset Button
