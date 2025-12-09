@@ -10,33 +10,17 @@ st.set_page_config(page_title="Gemini Math Coach", page_icon="♾️")
 with st.sidebar:
     st.header("Teacher Settings")
     
-    # A. Secure API Key Handling
-    # Checks Streamlit Secrets first (for Cloud), then asks user (for Local)
+    # Secure API Key Handling
     if "GEMINI_API_KEY" in st.secrets:
         api_key = st.secrets["GEMINI_API_KEY"]
-        st.success("Key found in Secrets! 🔒")
     else:
         api_key = st.text_input("Gemini API Key", type="password")
 
-    # B. DEBUGGER: Show Available Models
-    # This helps us fix the "404 Not Found" error by showing valid names
-    if api_key:
-        try:
-            genai.configure(api_key=api_key)
-            with st.expander("View Available Models (Debug)"):
-                models = genai.list_models()
-                for m in models:
-                    if 'generateContent' in m.supported_generation_methods:
-                        # Clean up the name (remove "models/" prefix)
-                        st.code(m.name.replace("models/", ""))
-        except Exception as e:
-            st.error(f"Key seems invalid: {e}")
-
-    # C. Problem Sheet URL
+    # Problem Sheet URL
     default_sheet = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRk-iI5pGXbX-u7vnoxOQWj1_5oaCg3-wbN1DK7VwWjB4tPGFfOQc7B1XgLhXk1A/pub?output=csv" 
     sheet_url = st.text_input("Problem Bank (CSV URL)", value=default_sheet)
     
-    # D. Reset Button
+    # Reset Button
     if st.button("Reset Session"):
         st.session_state.hint_level = 0
         st.session_state.chat_history = []
@@ -48,7 +32,7 @@ with st.sidebar:
 @st.cache_data
 def load_problems(url):
     try:
-        # on_bad_lines='skip' prevents the app from crashing if a row is bad
+        # on_bad_lines='skip' ensures the app doesn't crash on bad rows
         df = pd.read_csv(url, on_bad_lines='skip')
         return df
     except Exception as e:
@@ -74,7 +58,7 @@ elif st.session_state.current_problem_index >= len(df):
 
 current_problem = df.iloc[st.session_state.current_problem_index]
 
-# 5. The AI Brain (Updated with Fix)
+# 5. The AI Brain (Clean Version)
 def get_gemini_hint(problem_text, chat_history, level):
     if not api_key:
         return "⚠️ Please enter an API Key in the sidebar."
@@ -93,10 +77,8 @@ def get_gemini_hint(problem_text, chat_history, level):
     - Keep responses short.
     """
     
-    # *** THE FIX IS HERE ***
-    # We use 'gemini-1.5-flash' which is the standard stable alias.
-    # If this fails, try 'gemini-pro'
-    target_model_name = "gemini-1.5-flash"
+    # Updated to the model we found in your debug panel
+    target_model_name = "gemini-2.0-flash"
     
     try:
         model = genai.GenerativeModel(
@@ -113,4 +95,49 @@ def get_gemini_hint(problem_text, chat_history, level):
         response = chat.send_message(f"Problem: '{problem_text}'. I am stuck. Give me a Level {level} hint.")
         return response.text
     except Exception as e:
+        # Fixed the syntax error here
         return f"Error contacting Gemini ({target_model_name}): {e}"
+
+# 6. User Interface
+st.title("Gemini Math Coach 🇬")
+st.progress((st.session_state.current_problem_index + 1) / len(df))
+
+st.markdown(f"### Problem #{st.session_state.current_problem_index + 1}")
+st.info(current_problem['problem_text'])
+
+# Chat Display
+for msg in st.session_state.chat_history:
+    icon = "🧑‍🎓" if msg["role"] == "user" else "🤖"
+    with st.chat_message(msg["role"], avatar=icon):
+        st.write(msg["content"])
+
+# Interaction Buttons
+col1, col2 = st.columns([1, 1])
+
+with col1:
+    if st.button("💡 Get Hint"):
+        if st.session_state.hint_level < 3:
+            st.session_state.hint_level += 1
+            with st.spinner(f"Thinking (Level {st.session_state.hint_level})..."):
+                hint = get_gemini_hint(current_problem['problem_text'], st.session_state.chat_history, st.session_state.hint_level)
+            st.session_state.chat_history.append({"role": "user", "content": "I'm stuck."})
+            st.session_state.chat_history.append({"role": "assistant", "content": hint})
+            st.rerun()
+        else:
+            st.warning("No more hints available!")
+
+with col2:
+    user_ans = st.text_input("Your Answer:", placeholder="e.g. 12")
+    if st.button("Submit Answer"):
+        # Convert both to string to avoid number format mismatches
+        if str(user_ans).strip() == str(current_problem['answer']):
+            st.success("✅ Correct!")
+            st.balloons()
+            st.markdown(f"**Explanation:** {current_problem['explanation']}")
+            if st.button("Next Problem ➡️"):
+                st.session_state.current_problem_index += 1
+                st.session_state.hint_level = 0
+                st.session_state.chat_history = []
+                st.rerun()
+        else:
+            st.error("❌ Try again.")
