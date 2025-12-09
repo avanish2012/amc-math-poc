@@ -113,4 +113,4 @@ def get_gemini_hint(problem_text, chat_history, level):
         response = chat.send_message(f"Problem: '{problem_text}'. I am stuck. Give me a Level {level} hint.")
         return response.text
     except Exception as e:
-        return f"Error contacting Gemini ({target_model_name}): {
+        return f"Error contacting Gemini ({target_model_name}): {e}"
